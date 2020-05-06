@@ -1,0 +1,13 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="navigation_fish" dir="nav">
+	<doc>
+		<description>Navigate Bebops like fish</description>
+	</doc>
+	<header>
+    		<file name="navigation_fish.h"/>
+	</header>
+	<periodic fun="nav_fish_run()" freq="2." autorun="FALSE" /> 
+ 	<makefile>
+    		<file name="navigation_fish.c"/>
+  	</makefile>
+</module>
