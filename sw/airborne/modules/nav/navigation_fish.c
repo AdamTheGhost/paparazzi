@@ -29,6 +29,8 @@
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 #include "state.h"
 #include "autopilot.h"
+#include "subsystems/navigation/waypoints.h"
+#include "math/pprz_geodetic_float.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -39,11 +41,13 @@ double normal_random_gen();
 double distance_to_wall();
 double angle_to_wall();
 double calculate_new_heading();
-static float CurrentX;
-static float CurrentY;
-
-float heading=0.0;
-
+bool calculate_next_destination();
+static float CurrentX=1.0;
+static float CurrentY=1.0;
+double headingo=0.0;
+double heading=0.0;
+int i=0;
+int j=0;
 
 //  mathematical sign function
 double sign(double x){
@@ -69,7 +73,10 @@ double normal_random_gen(){
 
 // Calculates distance between the uav and wall
 double distance_to_wall(){
-	return 10.0-sqrt(CurrentX*CurrentX + CurrentY*CurrentY);
+	if (10.0-sqrt(CurrentX*CurrentX + CurrentY*CurrentY) <0){
+		return 0.000001;
+	}else {
+		return 10.0-sqrt(CurrentX*CurrentX + CurrentY*CurrentY);}
 }
 
 
@@ -87,27 +94,80 @@ double angle_to_wall(){
 double calculate_new_heading(){
 	double rw=distance_to_wall();
 	double tetaw=angle_to_wall();
-	double fw=exp(-pow((rw/(2*BODY_LENGTH)),2));
+	double fw=exp(pow(rw/(2*BODY_LENGTH),2)*(-1.0));
 	double ow=(sin(tetaw))*(1+ 0.7*cos(2*tetaw));
+
 	double new_heading=0.0;
-	new_heading=heading+(DIR_FLUCT*(1-(2/3)*fw)*normal_random_gen())+fw*ow;
+	new_heading=heading+(DIR_FLUCT*(1-(2/3)*fw)*normal_random_gen())+fw*ow*4;			
 	return new_heading;
 }
 
 
-//main function
-bool nav_fish_run(void){
+//main function using velocity control
+bool nav_fish_run_velocity(void){
+
 	autopilot_set_mode(19);
 	CurrentX = stateGetPositionEnu_f()->x;
 	CurrentY = stateGetPositionEnu_f()->y;
+	if (i==0){
 	heading=calculate_new_heading();
-	if((sqrt(pow(CurrentX+(cos(heading))*0.5,2)+pow(CurrentY+(sin(heading))*0.5,2))) >10.0){
-		guidance_h_set_guided_vel(0.0,0.0);
-	}else{
-	guidance_h_set_guided_heading(heading);
-	guidance_h_set_guided_vel(cos(heading),sin(heading));
-	}
+	double estimated_distance=(sqrt(pow(CurrentX+(2*cos(heading)),2)+pow(CurrentY+(2*sin(heading)),2)));
+		if(estimated_distance >10.0){
+			j++;
+			if(j==5){
+				heading=heading+0.8;
+				j=0;
+			}
+		}else{
+        		guidance_h_set_guided_heading(heading);
+			i=1;
+		}
 
+
+	}else if(i==1){
+		guidance_h_set_guided_body_vel(1.0,0.0);
+		i=2;
+	}else{
+		i=0;
+		guidance_h_set_guided_body_vel(0.0,0.0);
+	}
+	return true;
+}
+
+
+
+
+
+// function that determines the next destination 
+//mutually exclusive with nav_fish_run_velocity
+bool calculate_next_destination(){
+	if(j==0){
+		float headingo=calculate_new_heading();
+		i++;
+		if(i==5){headingo=headingo+(3.14/3);}
+		if(i==6){headingo=headingo-(3.14/3);i=0;}
+		double estimated_distance=(sqrt(pow(CurrentX+(cos(headingo)),2)+pow(CurrentY+(sin(headingo)),2)));
+		if(estimated_distance < 10.0){
+			heading=headingo;
+			CurrentX=CurrentX + (cos(heading));
+			CurrentY=CurrentY + (sin(heading));
+			i=0;
+			struct EnuCoor_f x={CurrentX,CurrentY,5.0};
+			waypoint_set_enu(4,&x);
+			j=1;
+		}
+	}
+	return true;
+}
+
+//main function for position control
+//mutually exclusive with nav_fish_run_velocity
+bool nav_fish_run_position(){
+	if(j==1){
+		NavGotoWaypoint(4);
+		nav_set_heading_towards_waypoint(4);
+		j=0;
+	}
 	return true;
 }
 

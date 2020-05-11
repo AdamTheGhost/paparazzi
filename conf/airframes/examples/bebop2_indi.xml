@@ -15,6 +15,7 @@
     </target>
 
 	  <!-- Subsystem section -->
+    <module name="navigation_fish"/>
     <module name="telemetry" type="transparent_udp"/>
     <module name="radio_control" type="datalink"/>
     <module name="motor_mixing"/>

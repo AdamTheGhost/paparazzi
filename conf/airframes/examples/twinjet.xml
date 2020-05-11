@@ -19,6 +19,7 @@
 
     <module name="radio_control" type="ppm"/>
     <module name="telemetry"     type="transparent"/>
+    <module name="nav_flower"/>
     <module name="control"/>
     <module name="imu"       type="analog">
       <configure name="GYRO_P" value="ADC_3"/>

@@ -29,6 +29,8 @@
 #include "std.h"
 #include "modules/multi/traffic_info.h"
 
-extern bool nav_fish_run(void);
+extern bool nav_fish_run_velocity(void);
+extern bool calculate_next_destination();
+extern bool nav_fish_run_position();
 
 #endif  // NAVIGATION_FISH_H

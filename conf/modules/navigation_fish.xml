@@ -6,7 +6,10 @@
 	<header>
     		<file name="navigation_fish.h"/>
 	</header>
-	<periodic fun="nav_fish_run()" freq="2." autorun="FALSE" /> 
+	<periodic fun="nav_fish_run_velocity()" freq="1." autorun="FALSE" /> 
+	<periodic fun="calculate_next_destination()" freq="30." autorun="FALSE" />
+	<periodic fun="nav_fish_run_position()" freq="1." autorun="FALSE" />
+
  	<makefile>
     		<file name="navigation_fish.c"/>
   	</makefile>
