@@ -3,13 +3,32 @@
 	<doc>
 		<description>Navigate Bebops like fish</description>
 	</doc>
+
+<settings target="ap|nps">
+  <dl_settings>
+
+    <dl_settings NAME="angle parameter">
+      <dl_setting var="ang" min="0.1" step="1.0" max="360.0" module="modules/nav/navigation_fish" shortname="angle" handler="setAngleParameter">
+ 
+      </dl_setting>
+    </dl_settings>
+
+  </dl_settings>
+</settings>
+
+
+
 	<header>
     		<file name="navigation_fish.h"/>
 	</header>
 	<periodic fun="nav_fish_run_velocity()" freq="1." autorun="FALSE" /> 
 	<periodic fun="calculate_next_destination()" freq="30." autorun="FALSE" />
 	<periodic fun="nav_fish_run_position()" freq="1." autorun="FALSE" />
-
+	<periodic fun="axis_test()" freq="1." autorun="FALSE" />
+	<periodic fun="comm_test()" freq="1." autorun="FALSE" />
+	<periodic fun="speed_test()" freq="1." autorun="FALSE" />
+	<periodic fun="parameter_data()" period="65" autorun="FALSE" />
+	
  	<makefile>
     		<file name="navigation_fish.c"/>
   	</makefile>

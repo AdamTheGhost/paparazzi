@@ -24,13 +24,19 @@
  */
 
 #ifndef NAVIGATION_FISH_H
-#define NAVIGATION_FISH_H
-
+#define NAVIGATION_FISH_H 
 #include "std.h"
 #include "modules/multi/traffic_info.h"
-
+//#define YW 0.0
+extern float yw;
+extern float ang;
 extern bool nav_fish_run_velocity(void);
 extern bool calculate_next_destination();
 extern bool nav_fish_run_position();
-
+extern bool axis_test();
+extern bool comm_test();
+extern bool speed_test();
+extern bool parameter_data();
+void navigation_fish_setFishParameter(float param);
+void navigation_fish_setAngleParameter(float param);
 #endif  // NAVIGATION_FISH_H

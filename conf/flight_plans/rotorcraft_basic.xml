@@ -10,7 +10,7 @@
     <waypoint name="STDBY" x="-2.0" y="-5.0"/>
     <waypoint name="p1" x="1.0" y="1.0"/>
     <waypoint name="p2" x="-3.53" y="3.53"/>
-    <waypoint name="p3" x="-3.53" y="-3.53"/>
+    <waypoint name="p3" x="-5.0" y="-7.0"/>
     <waypoint name="p4" x="3.53" y="-3.53"/>
     <waypoint name="CAM" x="-20" y="-50" height="2."/>
     <waypoint name="TD" x="5.6" y="-10.9"/>
@@ -22,7 +22,7 @@
     </block>
     <block name="Geo init">
       <while cond="LessThan(NavBlockTime(), 10)"/>
-      <call_once fun="NavSetGroundReferenceHere()"/>
+    <!--  <call_once fun="NavSetGroundReferenceHere()"/> -->
       <!--<call_once fun="NavSetAltitudeReferenceHere()"/>-->
     </block>
     <block name="Holding point">

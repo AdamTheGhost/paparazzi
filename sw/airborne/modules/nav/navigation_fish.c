@@ -31,23 +31,34 @@
 #include "autopilot.h"
 #include "subsystems/navigation/waypoints.h"
 #include "math/pprz_geodetic_float.h"
+#include "generated/flight_plan.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#define BODY_LENGTH 0.2
-#define DIR_FLUCT 0.1
+#define BODY_LENGTH 0.6
 double sign(double x);
 double normal_random_gen();
 double distance_to_wall();
 double angle_to_wall();
 double calculate_new_heading();
 bool calculate_next_destination();
+void navigation_fish_setFishParameter(float param);
+void navigation_fish_setAngleParameter(float param);
+float yw=0.8;
+float DIR_FLUCT=0.3;
+float ang=0.0;
+float step_size=0.5;
 static float CurrentX=1.0;
 static float CurrentY=1.0;
 double headingo=0.0;
 double heading=0.0;
+double new_heading=0.0;
+int big_angles=0;
+int stuck=0;
+int standby=0;
 int i=0;
 int j=0;
+
 
 //  mathematical sign function
 double sign(double x){
@@ -83,9 +94,9 @@ double distance_to_wall(){
 // calculates the relative orientation too the wall
 double angle_to_wall(){
 	if(CurrentX==0 && CurrentY==0){
-		return (2*3.14 - heading);
+		return ( - heading);
 	}else{
-		return 2*3.14 - heading + sign(CurrentX)*acos(CurrentY/(sqrt(CurrentX*CurrentX + CurrentY*CurrentY))) ;
+		return  - heading + sign(CurrentX)*acos(CurrentY/(sqrt(CurrentX*CurrentX + CurrentY*CurrentY))) ;
 	}
 }
 
@@ -94,11 +105,12 @@ double angle_to_wall(){
 double calculate_new_heading(){
 	double rw=distance_to_wall();
 	double tetaw=angle_to_wall();
-	double fw=exp(pow(rw/(2*BODY_LENGTH),2)*(-1.0));
+	printf("angle to wall=%lf",tetaw*180/3.14);
+	double fw=exp(pow(rw/(2 *BODY_LENGTH),2)*(-1.0));
 	double ow=(sin(tetaw))*(1+ 0.7*cos(2*tetaw));
-
-	double new_heading=0.0;
-	new_heading=heading+(DIR_FLUCT*(1-(2/3)*fw)*normal_random_gen())+fw*ow*4;			
+	step_size=1.1-(fw*0.5);
+	
+	new_heading=(DIR_FLUCT*(1-(2/3)*fw)*normal_random_gen())+fw*ow*yw;		
 	return new_heading;
 }
 
@@ -142,31 +154,66 @@ bool nav_fish_run_velocity(void){
 //mutually exclusive with nav_fish_run_velocity
 bool calculate_next_destination(){
 	if(j==0){
-		float headingo=calculate_new_heading();
-		i++;
-		if(i==5){headingo=headingo+(3.14/3);}
-		if(i==6){headingo=headingo-(3.14/3);i=0;}
-		double estimated_distance=(sqrt(pow(CurrentX+(cos(headingo)),2)+pow(CurrentY+(sin(headingo)),2)));
-		if(estimated_distance < 10.0){
-			heading=headingo;
-			CurrentX=CurrentX + (cos(heading));
-			CurrentY=CurrentY + (sin(heading));
+		float diff_heading=calculate_new_heading();
+	//	printf("  diff heading =%f   \n",diff_heading*180/3.14);
+		float headingo_1=heading + diff_heading;
+		float headingo_2=heading - diff_heading;
+		double estimated_distance_1=(sqrt(pow(CurrentX+(step_size*sin(headingo_1)),2)+pow(CurrentY+(step_size*cos(headingo_1)),2)));
+		double estimated_distance_2=(sqrt(pow(CurrentX+(step_size*sin(headingo_2)),2)+pow(CurrentY+(step_size*cos(headingo_2)),2)));	
+		if(estimated_distance_1 < 10.0){
+			if(abs(heading-headingo_1) >1.57){
+				big_angles++;
+			}
+			heading=headingo_1;
+			
+			CurrentX=CurrentX + (step_size*sin(heading));
+			CurrentY=CurrentY + (step_size*cos(heading));
 			i=0;
-			struct EnuCoor_f x={CurrentX,CurrentY,5.0};
-			waypoint_set_enu(4,&x);
+			struct EnuCoor_i x={POS_BFP_OF_REAL(CurrentX),POS_BFP_OF_REAL(CurrentY),POS_BFP_OF_REAL(5.0)};
+			//struct EnuCoor_f x={CurrentX,CurrentY,5.0};
+			//waypoint_set_enu(4,&x);
+			waypoint_move_enu_i(WP_p1,&x);
 			j=1;
+		}else {
+			if(estimated_distance_2 < 10.0){
+				if(abs(heading-headingo_2) >1.57){
+					big_angles++;
+				}
+			heading=headingo_2;
+			
+			CurrentX=CurrentX + (step_size*sin(heading));
+			CurrentY=CurrentY + (step_size*cos(heading));
+			i=0;
+			struct EnuCoor_i x={POS_BFP_OF_REAL(CurrentX),POS_BFP_OF_REAL(CurrentY),POS_BFP_OF_REAL(5.0)};
+			//struct EnuCoor_f x={CurrentX,CurrentY,5.0};
+			//waypoint_set_enu(4,&x);
+			waypoint_move_enu_i(WP_p1,&x);
+			j=1;
+			}
 		}
 	}
 	return true;
 }
 
+
+
+
+
+
 //main function for position control
 //mutually exclusive with nav_fish_run_velocity
 bool nav_fish_run_position(){
-	if(j==1){
-		NavGotoWaypoint(4);
-		nav_set_heading_towards_waypoint(4);
-		j=0;
+	if(standby>0){
+		standby--;
+	}else{
+		if(j==1){
+			nav_set_heading_towards_waypoint(4);
+			NavGotoWaypoint(4);
+		
+			j=0;
+		}else{
+			stuck++;
+		}
 	}
 	return true;
 }
@@ -175,6 +222,106 @@ bool nav_fish_run_position(){
 
 
 
+
+
+
+
+
+bool parameter_data(){
+	if(DIR_FLUCT <=1.0){
+		printf("for yw=%f   and DIR_FLUCT=%f   big angles = %d  and stuck times =%d \n",yw,DIR_FLUCT,big_angles,stuck);
+
+
+	}
+	yw=yw+0.5;
+	if(yw >10){
+		DIR_FLUCT=DIR_FLUCT+0.1;
+		yw=0.5;
+	}
+
+	standby=4;
+	CurrentX=1.0;
+	CurrentY=1.0;
+	heading=0.0;
+	struct EnuCoor_i x={POS_BFP_OF_REAL(CurrentX),POS_BFP_OF_REAL(CurrentY),POS_BFP_OF_REAL(5.0)};
+	waypoint_move_enu_i(WP_p1,&x);
+	NavGotoWaypoint(4);
+	nav_set_heading_deg(0);
+	big_angles=0;
+	stuck=0;
+return true;
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool axis_test(){
+//autopilot_set_mode(19);
+nav_set_manual(0.4, 0.4, 0.4);
+printf("ang=%f \n",ang);
+return true;
+}
+
+bool speed_test(){
+autopilot_set_mode(19);
+guidance_h_set_guided_body_vel(1.0,0.0);
+return true;
+}
+bool comm_test(){
+float xt=acInfoGetPositionEnu_f(200)->x;
+float yt=acInfoGetPositionEnu_f(200)->y;
+float course =acInfoGetCourse(200);
+
+printf("x= %f     y=%f   course= %f \n",xt*2.57,yt*2.57,course);
+
+
+return true;
+}
+
+
+void navigation_fish_setFishParameter(float param){
+printf("param =%f  \n",param);
+printf("yw=%f \n",yw);
+//nav_set_heading_deg(param);
+}
+
+
+void navigation_fish_setAngleParameter(float param){
+nav_set_heading_deg(param);
+/*heading=param*3.14/180;
+CurrentX = stateGetPositionEnu_f()->x;
+	CurrentY = stateGetPositionEnu_f()->y;
+printf("angle =%f \n",angle_to_wall()*180/3.14);*/
+}
 
 
 
