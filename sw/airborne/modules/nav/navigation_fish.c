@@ -36,11 +36,11 @@
 #include <stdlib.h>
 #include <math.h>
 #define BODY_LENGTH 0.6
-double sign(double x);
-double normal_random_gen();
-double distance_to_wall();
-double angle_to_wall();
-double calculate_new_heading();
+float sign(float x);
+float normal_random_gen();
+float distance_to_wall(float x ,float y);
+float angle_to_wall();
+float calculate_new_heading();
 bool calculate_next_destination();
 void navigation_fish_setFishParameter(float param);
 void navigation_fish_setAngleParameter(float param);
@@ -50,18 +50,22 @@ float ang=0.0;
 float step_size=0.5;
 static float CurrentX=1.0;
 static float CurrentY=1.0;
-double headingo=0.0;
-double heading=0.0;
-double new_heading=0.0;
+float headingo=0.0;
+float heading=0.0;
+float new_heading=0.0;
+float tetaw=0.0;
+float rw=0.0;
 int big_angles=0;
 int stuck=0;
 int standby=0;
 int i=0;
 int j=0;
-
-
+int controlleur_frequence=4;
+float heading200=0.0;
+float x200=0.0;
+float y200=0.0;
 //  mathematical sign function
-double sign(double x){
+float sign(float x){
 	if(x>=0){
 		return 1.0;
 	}else{
@@ -75,24 +79,24 @@ double sign(double x){
  * mean =0 invariance =1
  * using Box-Muller method
  */
-double normal_random_gen(){
-	double random1=((double)rand())/((double)(RAND_MAX));
-	double random2=((double)rand())/((double)(RAND_MAX));
+float normal_random_gen(){
+	float random1=((float)rand())/((float)(RAND_MAX));
+	float random2=((float)rand())/((float)(RAND_MAX));
 	return cos(2*3.14*random1)*sqrt(-2.*log(random2));
 }
 
 
 // Calculates distance between the uav and wall
-double distance_to_wall(){
-	if (10.0-sqrt(CurrentX*CurrentX + CurrentY*CurrentY) <0){
+float distance_to_wall(float x, float y){
+	if (10.0-sqrt(x*x + y*y) <0){
 		return 0.000001;
 	}else {
-		return 10.0-sqrt(CurrentX*CurrentX + CurrentY*CurrentY);}
+		return 10.0-sqrt(x*x + y*y);}
 }
 
 
 // calculates the relative orientation too the wall
-double angle_to_wall(){
+float angle_to_wall(){
 	if(CurrentX==0 && CurrentY==0){
 		return ( - heading);
 	}else{
@@ -102,14 +106,13 @@ double angle_to_wall(){
 
 
 //function that calculates new heading for the uav
-double calculate_new_heading(){
-	double rw=distance_to_wall();
-	double tetaw=angle_to_wall();
-	printf("angle to wall=%lf",tetaw*180/3.14);
-	double fw=exp(pow(rw/(2 *BODY_LENGTH),2)*(-1.0));
-	double ow=(sin(tetaw))*(1+ 0.7*cos(2*tetaw));
-	step_size=1.1-(fw*0.5);
-	
+float calculate_new_heading(){
+	rw=distance_to_wall(CurrentX,CurrentY);
+	tetaw=angle_to_wall();
+	float fw=exp(pow(rw/(2 *BODY_LENGTH),2)*(-1.0));
+	float ow=(sin(tetaw))*(1+ 0.7*cos(2*tetaw));
+	step_size=1.1-(fw);
+
 	new_heading=(DIR_FLUCT*(1-(2/3)*fw)*normal_random_gen())+fw*ow*yw;		
 	return new_heading;
 }
@@ -158,9 +161,9 @@ bool calculate_next_destination(){
 	//	printf("  diff heading =%f   \n",diff_heading*180/3.14);
 		float headingo_1=heading + diff_heading;
 		float headingo_2=heading - diff_heading;
-		double estimated_distance_1=(sqrt(pow(CurrentX+(step_size*sin(headingo_1)),2)+pow(CurrentY+(step_size*cos(headingo_1)),2)));
-		double estimated_distance_2=(sqrt(pow(CurrentX+(step_size*sin(headingo_2)),2)+pow(CurrentY+(step_size*cos(headingo_2)),2)));	
-		if(estimated_distance_1 < 10.0){
+		float estimated_distance_1=distance_to_wall((CurrentX+(step_size*sin(headingo_1))),(CurrentY+(step_size*cos(headingo_1))));
+		float estimated_distance_2=distance_to_wall((CurrentX+(step_size*sin(headingo_2))),(CurrentY+(step_size*cos(headingo_2))));;	
+		if(estimated_distance_1 > 0.6){
 			if(abs(heading-headingo_1) >1.57){
 				big_angles++;
 			}
@@ -174,8 +177,9 @@ bool calculate_next_destination(){
 			//waypoint_set_enu(4,&x);
 			waypoint_move_enu_i(WP_p1,&x);
 			j=1;
+			printf("%f,%f,%f\n",rw,tetaw,diff_heading);
 		}else {
-			if(estimated_distance_2 < 10.0){
+			if(estimated_distance_2 > 0.6){
 				if(abs(heading-headingo_2) >1.57){
 					big_angles++;
 				}
@@ -189,6 +193,7 @@ bool calculate_next_destination(){
 			//waypoint_set_enu(4,&x);
 			waypoint_move_enu_i(WP_p1,&x);
 			j=1;
+			printf("%f,%f,%f\n",rw,tetaw,diff_heading);
 			}
 		}
 	}
@@ -203,17 +208,22 @@ bool calculate_next_destination(){
 //main function for position control
 //mutually exclusive with nav_fish_run_velocity
 bool nav_fish_run_position(){
-	if(standby>0){
-		standby--;
-	}else{
-		if(j==1){
-			nav_set_heading_towards_waypoint(4);
-			NavGotoWaypoint(4);
-		
-			j=0;
+	if(controlleur_frequence==0 || distance_to_wall(CurrentX,CurrentY) < 1.2){
+		controlleur_frequence=4;
+		if(standby>0){
+			standby--;
 		}else{
-			stuck++;
+			if(j==1){
+				nav_set_heading_towards_waypoint(4);
+				NavGotoWaypoint(4);
+			
+				j=0;
+			}else{
+				stuck++;
+			}
 		}
+	}else{
+		controlleur_frequence--;
 	}
 	return true;
 }
@@ -297,14 +307,20 @@ guidance_h_set_guided_body_vel(1.0,0.0);
 return true;
 }
 bool comm_test(){
-float xt=acInfoGetPositionEnu_f(200)->x;
-float yt=acInfoGetPositionEnu_f(200)->y;
-float course =acInfoGetCourse(200);
+	float xt=(acInfoGetPositionEnu_f(200)->x)*2.57;
+	float yt=(acInfoGetPositionEnu_f(200)->y)*2.57;
+	float course =acInfoGetCourse(200);
+	float deltaX=xt-x200;
+	float deltaY=yt-y200;
+	if(sqrt(deltaX*deltaX+deltaY*deltaY) >0.2){
+		heading200=sign(deltaX)*sign(deltaY)*acos(abs(deltaY)/(sqrt(deltaX*deltaX + deltaY*deltaY)));
+		if(sign(deltaY)<0){heading200=heading200+3.14;}
+	}
+	printf("x= %f     y=%f   course1= %f   course2=%f \n",xt,yt,heading200*180/3.14,course*180/3.14);
+	x200=xt;
+	y200=yt;
 
-printf("x= %f     y=%f   course= %f \n",xt*2.57,yt*2.57,course);
-
-
-return true;
+	return true;
 }
 
 
@@ -322,33 +338,5 @@ CurrentX = stateGetPositionEnu_f()->x;
 	CurrentY = stateGetPositionEnu_f()->y;
 printf("angle =%f \n",angle_to_wall()*180/3.14);*/
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	//acInfoGetPositionEnu_f(id);
-//CurrentY=acInfoGetPositionEnu_f(id)->y;
 
 
