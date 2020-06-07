@@ -28,8 +28,10 @@
 #include "std.h"
 #include "modules/multi/traffic_info.h"
 //#define YW 0.0
-extern float yw;
+extern float YW,YATT,LATT,D0ATT,YALI,LALI,D0ALI;
 extern float ang;
+extern float DIR_FLUCT;
+extern int myneighbor;
 extern bool nav_fish_run_velocity(void);
 extern bool calculate_next_destination();
 extern bool nav_fish_run_position();
