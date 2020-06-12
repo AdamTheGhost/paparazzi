@@ -12,11 +12,11 @@
       <module name="udp"/>
       <define name="STABILIZATION_INDI_G2_R" value="0.0"/><!-- for jsbsim (rotor inertia is not modelled) -->
       <!-- <define name="STABILIZATION_INDI_G2_R" value="0.20"/> --><!-- for gazebo -->
+      <define name="FAILSAFE_MODE_TOO_FAR_FROM_HOME" value="AP_MODE_NAV"/>
+      <define name="FAILSAFE_MODE_DISTANCE" value="MAX_DIST_FROM_HOME"/>
     </target>
 
 	  <!-- Subsystem section -->
-    <module name="navigation_fish"/>
-	<module name="traffic_info"/>
     <module name="telemetry" type="transparent_udp"/>
     <module name="radio_control" type="datalink"/>
     <module name="motor_mixing"/>
@@ -30,6 +30,9 @@
     <module name="gps" type="ublox"/>
     <module name="stabilization" type="indi_simple"/>
     <module name="ins" type="ekf2"/>
+    
+    <module name="traffic_info"/>
+    <module name="nav" type="fish"/>
     
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
@@ -170,7 +173,7 @@
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="20" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="0.5" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
     <define name="PGAIN" value="120"/>
@@ -207,3 +210,4 @@
     <define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
   </section>
 </airframe>
+
