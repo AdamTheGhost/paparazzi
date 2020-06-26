@@ -34,6 +34,7 @@
 #include "math/pprz_geodetic_float.h"
 #include "generated/flight_plan.h"
 #include <math.h>
+#include "subsystems/datalink/telemetry.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,7 +44,7 @@
  */
 
 #ifndef NAV_FISH_BODY_LENGTH
-#define NAV_FISH_BODY_LENGTH 1.f
+#define NAV_FISH_BODY_LENGTH 0.5f
 #endif
 
 #ifndef NAV_FISH_FLUCT
@@ -95,7 +96,7 @@
 #endif
 
 #ifndef NAV_FISH_WALL_DISTANCE
-#define NAV_FISH_WALL_DISTANCE 10.f
+#define NAV_FISH_WALL_DISTANCE 3.5f
 #endif
 
 #ifndef NAV_FISH_WP
@@ -162,6 +163,11 @@ void nav_fish_init(void)
 //int has_found_new_destination = 0;
 //int controlleur_frequence = 15;
 
+
+
+static inline void send_swarm_message(void) {
+  DOWNLINK_SEND_SWARM_FISH(DefaultChannel, DefaultDevice, &nav_fish.heading, &nav_fish.step_size, &nav_fish.r_w, &nav_fish.f_w, &nav_fish.theta_w, &nav_fish.f_fluct, &nav_fish.f_wall, &nav_fish.f_ali, &nav_fish.f_att);
+}
 
 /** Gaussian random number generator with mean =0 and invariance =1 using Box-Muller method
  * @return random number following a normal distribution
@@ -284,7 +290,7 @@ static float calculate_new_heading(void)
   nav_fish.f_w = fw;
   nav_fish.f_fluct = nfp.fluct * (1.f - nfp.alpha * fw) * normal_random_gen();
   nav_fish.f_wall = nfp.y_w * ow * fw;
-  nav_fish.step_size = 1.1f - fw;
+  nav_fish.step_size = (1.1f - fw) / 2.f;
 
   // compute alignement and attraction with other drones
   struct EnuCoor_f *pos_focal = NULL;
@@ -360,6 +366,7 @@ bool nav_fish_velocity_run(void)
         // DegOfRad(new_heading));
   nav_fish.heading = new_heading;
   autopilot_guided_update(GUIDED_FLAG_XY_BODY | GUIDED_FLAG_XY_VEL, 0.5f, 0.0f, -2.0f, nav_fish.heading);
+  send_swarm_message();
   return true;
 }
 
@@ -392,6 +399,7 @@ bool nav_fish_position_run(void)
   };
   waypoint_move_enu_i(NAV_FISH_WP, &new_pos);
   nav_set_heading_towards_waypoint(NAV_FISH_WP);
+  send_swarm_message();
   return true;
 }
 
