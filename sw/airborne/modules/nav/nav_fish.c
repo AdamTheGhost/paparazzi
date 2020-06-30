@@ -176,7 +176,7 @@ static float normal_random_gen(void)
 {
   float random1 = ((float)rand()) / ((float)(RAND_MAX));
   float random2 = ((float)rand()) / ((float)(RAND_MAX));
-  return cosf(M_2_PI * random1) * sqrtf(-2.f*logf(random2));
+  return cosf(2.f*M_PI * random1) * sqrtf(-2.f*logf(random2));
 }
 
 
@@ -206,7 +206,7 @@ static float angle_to_wall(struct EnuCoor_f *pos, float psi)
   float theta = atan2f(pos->y, pos->x);
   float delta = dir - theta;
   FLOAT_ANGLE_NORMALIZE(delta);
-  printf("%f %f %f\n", DegOfRad(dir), DegOfRad(theta), DegOfRad(delta));
+  //printf("%f %f %f\n", DegOfRad(dir), DegOfRad(theta), DegOfRad(delta));
   return delta;
 }
 
@@ -266,7 +266,7 @@ static float neighbor_influence(struct EnuCoor_f *pos, struct EnuCoor_f *other, 
     tmp_ali = nfp.y_ali * sinf(d_phi) * (d2d + nfp.d0_ali) * expf(-tmp_ali * tmp_ali);
     float tmp_att = d2d / nfp.l_att;
     tmp_att = nfp.y_att * ((d2d - nfp.d0_att) / (1.f + tmp_att * tmp_att)) * sinf(view);
-    return abs(tmp_att + tmp_ali);
+    return fabs(tmp_att + tmp_ali);
 }
 
 /** calculates new variation of the heading for the uav based on current state
@@ -281,8 +281,8 @@ static float calculate_new_heading(void)
   nav_fish.r_w = distance_to_wall(pos);
   nav_fish.theta_w = angle_to_wall(pos, psi);
 
-  printf("AC %d\n", AC_ID);
-  printf(" - angle to wall= %lf, dist= %lf\n", DegOfRad(nav_fish.theta_w), nav_fish.r_w);
+  //printf("AC %d\n", AC_ID);
+  //printf(" - angle to wall= %lf, dist= %lf\n", DegOfRad(nav_fish.theta_w), nav_fish.r_w);
 
   // compute fluctuation and wall reaction
   float fw = expf(-powf(nav_fish.r_w / nfp.l_w, 2.f));
@@ -307,6 +307,7 @@ static float calculate_new_heading(void)
     if (delta_t < 1.f) {
       // compute if others position is not older than 1s
       id_current = ti_acs[ac].ac_id;
+      //  printf("i am %d  calling %d \n",AC_ID,id_current);
       pos_current = acInfoGetPositionEnu_f(ti_acs[ac].ac_id);
       psi_current = acInfoGetCourse(ti_acs[ac].ac_id);
       if (nfp.strategy == 1) {
@@ -333,9 +334,10 @@ static float calculate_new_heading(void)
     float view = viewing_angle(pos, pos_focal, psi);
     float d2d = distance_drone_to_drone(pos, pos_focal);
     float d_phi = delta_phi(psi, psi_focal);
-    printf(" - neighbor= %d, psi= %f, d_phi= %f, dist2drone= %f\n", id_focal, DegOfRad(view), DegOfRad(d_phi), d2d);
+    //printf(" - neighbor= %d, psi= %f, d_phi= %f, dist2drone= %f\n", id_focal, DegOfRad(view), DegOfRad(d_phi), d2d);
     float tmp_ali = d2d / nfp.l_ali;
     nav_fish.f_ali = nfp.y_ali * sinf(d_phi) * (d2d + nfp.d0_ali) * expf(-tmp_ali * tmp_ali);
+    printf("dphi= %f , fali =%f \n",d_phi,nav_fish.f_ali);
     float tmp_att = d2d / nfp.l_att;
     nav_fish.f_att = nfp.y_att * ((d2d - nfp.d0_att) / (1.f + tmp_att * tmp_att)) * sinf(view);
   } else {
@@ -356,7 +358,6 @@ bool nav_fish_velocity_run(void)
 {
   static int counter = PRESCALE;
   counter = counter - (1 + (int)(nav_fish.f_w * (PRESCALE - 1)));
-  printf("counter = %d   fw= %f  \n",counter,nav_fish.f_w);
   if (counter > 0) { return true; }
   counter = PRESCALE;
   float diff_heading = calculate_new_heading();
@@ -377,13 +378,11 @@ bool nav_fish_position_run(void)
 {
   static int counter = PRESCALE;
   counter = counter - (1 + (int)(nav_fish.f_w * (PRESCALE - 1)));
-  printf("counter = %d   fw= %f  \n",counter,nav_fish.f_w);
   if (counter > 0) { return true; }
   counter = PRESCALE;
   float diff_heading = calculate_new_heading();
   float new_heading = nav_fish.heading - diff_heading;
   FLOAT_ANGLE_NORMALIZE(new_heading);
-  printf("  diff heading =%f , heading= %f,  new_heading= %f \n", diff_heading * 180 / 3.14, DegOfRad(nav_fish.heading), DegOfRad(new_heading));
   autopilot_set_mode(AP_MODE_NAV);
   struct EnuCoor_f *pos = stateGetPositionEnu_f();
   struct EnuCoor_f move = {
