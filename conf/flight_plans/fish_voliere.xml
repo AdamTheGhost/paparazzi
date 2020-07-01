@@ -9,13 +9,13 @@
     <waypoint name="STDBY" x="1.0" y="0.0"/>
     <waypoint name="p1" x="-1.0" y="1.0"/>
     <waypoint name="TD" x="1.0" y="0"/>
-    <waypoint name="S1" x="0" y="3.8"/>
+    <waypoint name="S1" x="0" y="4.0"/>
     <waypoint name="S2" x="3.0" y="3.0"/>
-    <waypoint name="S3" x="3.8" y="0"/>
+    <waypoint name="S3" x="4.0" y="0"/>
     <waypoint name="S4" x="3.0" y="-3.0"/>
-    <waypoint name="S5" x="0" y="-3.8"/>
+    <waypoint name="S5" x="0" y="-4.0"/>
     <waypoint name="S6" x="-3.0" y="-3.0"/>
-    <waypoint name="S7" x="-3.8" y="0"/>
+    <waypoint name="S7" x="-4.0" y="0"/>
     <waypoint name="S8" x="-3.0" y="3.0"/>
     <waypoint name="_N1" x="4.5" y="5.2"/>
     <waypoint name="_N2" x="4.5" y="-5.2"/>
