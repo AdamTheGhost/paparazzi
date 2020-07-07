@@ -47,6 +47,18 @@
 #define NAV_FISH_BODY_LENGTH 0.5f
 #endif
 
+#ifndef NAV_FISH_MAXVELOCITY
+#define NAV_FISH_MAXVELOCITY 0.5f
+#endif
+
+#ifndef NAV_FISH_MINVELOCITY
+#define NAV_FISH_MINVELOCITY 0.1f
+#endif
+
+#ifndef NAV_FISH_MIND2D
+#define NAV_FISH_MIND2D 1.f
+#endif
+
 #ifndef NAV_FISH_FLUCT
 #define NAV_FISH_FLUCT 0.1f
 #endif
@@ -122,6 +134,7 @@ struct NavFish {
   float f_wall;       ///< wall effect
   float f_ali;        ///< alignement effect
   float f_att;        ///< attraction effect
+  float velocity;     ///< current velocity
 };
 
 struct NavFish nav_fish;
@@ -130,19 +143,22 @@ struct NavFish nav_fish;
  */
 void nav_fish_init(void)
 {
-  nav_fish_params.fluct    = NAV_FISH_FLUCT;
-  nav_fish_params.alpha    = NAV_FISH_ALPHA;
-  nav_fish_params.e_w1     = NAV_FISH_EW1;
-  nav_fish_params.e_w2     = NAV_FISH_EW2;
-  nav_fish_params.y_w      = NAV_FISH_YW;
-  nav_fish_params.l_w      = NAV_FISH_LW;
-  nav_fish_params.y_att    = NAV_FISH_YATT;
-  nav_fish_params.l_att    = NAV_FISH_LATT;
-  nav_fish_params.d0_att   = NAV_FISH_D0ATT;
-  nav_fish_params.y_ali    = NAV_FISH_YALI;
-  nav_fish_params.l_ali    = NAV_FISH_LALI;
-  nav_fish_params.d0_ali   = NAV_FISH_D0ALI;
-  nav_fish_params.strategy = NAV_FISH_STRATEGY;
+  nav_fish_params.max_velocity = NAV_FISH_MAXVELOCITY;
+  nav_fish_params.min_velocity = NAV_FISH_MINVELOCITY;
+  nav_fish_params.min_d2d      = NAV_FISH_MIND2D;
+  nav_fish_params.fluct        = NAV_FISH_FLUCT;
+  nav_fish_params.alpha        = NAV_FISH_ALPHA;
+  nav_fish_params.e_w1         = NAV_FISH_EW1;
+  nav_fish_params.e_w2         = NAV_FISH_EW2;
+  nav_fish_params.y_w          = NAV_FISH_YW;
+  nav_fish_params.l_w          = NAV_FISH_LW;
+  nav_fish_params.y_att        = NAV_FISH_YATT;
+  nav_fish_params.l_att        = NAV_FISH_LATT;
+  nav_fish_params.d0_att       = NAV_FISH_D0ATT;
+  nav_fish_params.y_ali        = NAV_FISH_YALI;
+  nav_fish_params.l_ali        = NAV_FISH_LALI;
+  nav_fish_params.d0_ali       = NAV_FISH_D0ALI;
+  nav_fish_params.strategy     = NAV_FISH_STRATEGY;
 
   nav_fish.heading = 0.f;
   nav_fish.step_size = NAV_FISH_BODY_LENGTH;
@@ -153,6 +169,7 @@ void nav_fish_init(void)
   nav_fish.f_wall = 0.f;
   nav_fish.f_ali = 0.f;
   nav_fish.f_att = 0.f;
+  nav_fish.velocity = 0.5f;
 }
 
 //int big_angles = 0;
@@ -340,6 +357,11 @@ static float calculate_new_heading(void)
     printf("dphi= %f , fali =%f \n",d_phi,nav_fish.f_ali);
     float tmp_att = d2d / nfp.l_att;
     nav_fish.f_att = nfp.y_att * ((d2d - nfp.d0_att) / (1.f + tmp_att * tmp_att)) * sinf(view);
+    if(d2d <= nfp.min_d2d) {
+      nav_fish.velocity = nfp.min_velocity;
+    } else {
+      nav_fish.velocity = nfp.max_velocity;
+    }
   } else {
     nav_fish.f_ali = 0.f;
     nav_fish.f_att = 0.f;
@@ -366,7 +388,7 @@ bool nav_fish_velocity_run(void)
   //printf(" (speed) diff heading =%f , heading= %f,  new_heading= %f \n", diff_heading * 180 / 3.14, DegOfRad(nav_fish.heading),
         // DegOfRad(new_heading));
   nav_fish.heading = new_heading;
-  autopilot_guided_update(GUIDED_FLAG_XY_BODY | GUIDED_FLAG_XY_VEL, 0.5f, 0.0f, -2.0f, nav_fish.heading);
+  autopilot_guided_update(GUIDED_FLAG_XY_BODY | GUIDED_FLAG_XY_VEL, nav_fish.velocity, 0.0f, -2.0f, nav_fish.heading);
   send_swarm_message();
   return true;
 }

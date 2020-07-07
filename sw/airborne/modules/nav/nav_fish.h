@@ -32,19 +32,22 @@
  * nav fish param structure
  */
 struct NavFishParams {
-  float fluct;      ///< random fluctuation intensity
-  float alpha;      ///< random fluctuation reduction to wall
-  float e_w1;       ///< wall interaction's first coefficient
-  float e_w2;       ///< wall interaction's first coefficient
-  float y_w;        ///< wall interaction intensity
-  float l_w;        ///< wall interaction distance
-  float y_att;      ///< attraction intensity
-  float l_att;      ///< attraction distance
-  float d0_att;     ///< attraction balance distance
-  float y_ali;      ///< alignement intensity
-  float l_ali;      ///< alignement distance
-  float d0_ali;     ///< alignement balance distance
-  int strategy;     ///< strategy for choosing focal uav : 0 for closest uav , 1 for most influential uav
+  float max_velocity;  ///< max velocity allowed
+  float min_velocity;  ///< minimum velocity when facing obstacles
+  float min_d2d;       ///< minimum distance between two drones
+  float fluct;         ///< random fluctuation intensity
+  float alpha;         ///< random fluctuation reduction to wall
+  float e_w1;          ///< wall interaction's first coefficient
+  float e_w2;          ///< wall interaction's first coefficient
+  float y_w;           ///< wall interaction intensity
+  float l_w;           ///< wall interaction distance
+  float y_att;         ///< attraction intensity
+  float l_att;         ///< attraction distance
+  float d0_att;        ///< attraction balance distance
+  float y_ali;         ///< alignement intensity
+  float l_ali;         ///< alignement distance
+  float d0_ali;        ///< alignement balance distance
+  int strategy;        ///< strategy for choosing focal uav : 0 for closest uav , 1 for most influential uav
 };
 
 extern struct NavFishParams nav_fish_params;

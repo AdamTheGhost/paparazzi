@@ -12,6 +12,9 @@
   <settings>
     <dl_settings>
       <dl_settings NAME="Nav Fish">
+        <dl_setting var="nav_fish_params.max_velocity" shortname="max V" min="0.1" step=".1" max="1.0" module="modules/nav/nav_fish"/>
+	<dl_setting var="nav_fish_params.min_velocity" shortname="min V" min="0.1" step=".1" max="1.0" module="modules/nav/nav_fish"/>
+	<dl_setting var="nav_fish_params.min_d2d" shortname="min d2d" min="0.1" step=".1" max="5.0" module="modules/nav/nav_fish"/>
 	<dl_setting var="nav_fish_params.alpha" shortname="alpha" min="0.01" step=".01" max="1.0" module="modules/nav/nav_fish"/>
 	<dl_setting var="nav_fish_params.e_w1" shortname="e_w1" min="0.0" step=".01" max="1.0" module="modules/nav/nav_fish"/>
 	<dl_setting var="nav_fish_params.e_w2" shortname="e_w2" min="0.0" step=".01" max="1.0" module="modules/nav/nav_fish"/>
